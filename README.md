@@ -49,8 +49,15 @@ python -m cli.main chat
 
 ### Docker
 
-#### Using Pre-built Image
-You can pull and run the pre-built image from Docker Hub:
+#### Quick Start (Ephemeral)
+To try it out quickly without persisting data:
+```bash
+docker run -p 8000:8000 alexmerced/robust_mcp_client
+```
+*Note: Models will be re-downloaded and chat history lost when the container stops.*
+
+#### Using Pre-built Image (Persistent)
+To persist models and history:
 
 ```bash
 docker run -p 8000:8000 \
