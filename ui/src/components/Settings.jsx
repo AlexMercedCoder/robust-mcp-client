@@ -10,53 +10,27 @@ export function Settings({ onBack }) {
     mcp_servers: []
   });
   const [status, setStatus] = useState('');
-  const [newServer, setNewServer] = useState({ name: '', transport: 'stdio', command: '', args: '', url: '' });
-
-  useEffect(() => {
-    fetch('http://localhost:8000/api/config')
-      .then(res => res.json())
-      .then(data => {
-        setConfig(prev => ({ ...prev, ...data }));
-      })
-      .catch(console.error);
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch('http://localhost:8000/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          llm_provider: config.provider,
-          openai_key: config.openai_key,
-          gemini_key: config.gemini_key,
-          anthropic_key: config.anthropic_key,
-          mcp_servers: config.mcp_servers
-        })
-      });
-      if (res.ok) {
-        setStatus('Settings saved successfully!');
-        setTimeout(() => setStatus(''), 3000);
-      } else {
-        setStatus('Failed to save settings.');
-      }
-    } catch (e) {
-      setStatus('Error saving settings.');
-    }
-  };
+  const [newServer, setNewServer] = useState({ name: '', transport: 'stdio', command: '', args: '', url: '', headers: '{}' });
 
   const addServer = () => {
-    if (!newServer.name) return;
+    let parsedHeaders = {};
+    try {
+      parsedHeaders = JSON.parse(newServer.headers || '{}');
+    } catch (e) {
+      alert("Invalid JSON for headers");
+      return;
+    }
+
     const server = {
       name: newServer.name,
       transport: newServer.transport,
       command: newServer.transport === 'stdio' ? newServer.command : undefined,
       args: newServer.transport === 'stdio' ? newServer.args.split(' ').filter(Boolean) : [],
-      url: newServer.transport === 'sse' ? newServer.url : undefined
+      url: newServer.transport === 'sse' ? newServer.url : undefined,
+      headers: newServer.transport === 'sse' ? parsedHeaders : undefined
     };
     setConfig(prev => ({ ...prev, mcp_servers: [...prev.mcp_servers, server] }));
-    setNewServer({ name: '', transport: 'stdio', command: '', args: '', url: '' });
+    setNewServer({ name: '', transport: 'stdio', command: '', args: '', url: '', headers: '{}' });
   };
 
   const removeServer = (idx) => {
@@ -140,7 +114,12 @@ export function Settings({ onBack }) {
                   {server.transport === 'stdio' ? (
                     <p className="text-sm text-muted-foreground font-mono">{server.command} {server.args.join(' ')}</p>
                   ) : (
-                    <p className="text-sm text-muted-foreground font-mono">{server.url}</p>
+                    <div className="text-sm text-muted-foreground font-mono">
+                      <p>{server.url}</p>
+                      {server.headers && Object.keys(server.headers).length > 0 && (
+                        <p className="text-xs opacity-75">Headers: {JSON.stringify(server.headers)}</p>
+                      )}
+                    </div>
                   )}
                 </div>
                 <button 
@@ -189,12 +168,20 @@ export function Settings({ onBack }) {
                 />
               </div>
             ) : (
-              <input 
-                placeholder="URL (e.g., http://localhost:3000/sse)"
-                value={newServer.url}
-                onChange={e => setNewServer({...newServer, url: e.target.value})}
-                className="w-full p-2 rounded-md border bg-background"
-              />
+              <div className="space-y-2">
+                <input 
+                  placeholder="URL (e.g., http://localhost:3000/sse)"
+                  value={newServer.url}
+                  onChange={e => setNewServer({...newServer, url: e.target.value})}
+                  className="w-full p-2 rounded-md border bg-background"
+                />
+                <textarea
+                  placeholder='Headers JSON (e.g. {"Authorization": "Bearer token"})'
+                  value={newServer.headers}
+                  onChange={e => setNewServer({...newServer, headers: e.target.value})}
+                  className="w-full p-2 rounded-md border bg-background font-mono text-xs h-20"
+                />
+              </div>
             )}
             
             <button 

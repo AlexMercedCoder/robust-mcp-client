@@ -11,6 +11,7 @@ class MCPServerConfig(BaseSettings):
     args: List[str] = []
     env: Dict[str, str] = {}
     url: Optional[str] = None
+    headers: Dict[str, str] = {}
 
 class Settings(BaseSettings):
     # LLM Configuration
@@ -47,7 +48,8 @@ class Settings(BaseSettings):
                             command=config.get("command"),
                             args=config.get("args", []),
                             env=config.get("env", {}),
-                            url=config.get("url")
+                            url=config.get("url"),
+                            headers=config.get("headers", {})
                         ))
             except Exception as e:
                 print(f"Error loading mcp.json: {e}")

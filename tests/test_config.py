@@ -11,9 +11,10 @@ async def test_config_parsing():
     assert c1.command == "echo"
     
     # Test SSE config
-    c2 = MCPServerConfig(name="test2", transport="sse", url="http://localhost:3000")
+    c2 = MCPServerConfig(name="test2", transport="sse", url="http://localhost:3000", headers={"Authorization": "Bearer token"})
     assert c2.transport == "sse"
     assert c2.url == "http://localhost:3000"
+    assert c2.headers == {"Authorization": "Bearer token"}
 
 @pytest.mark.asyncio
 async def test_mcp_client_connection_logic():

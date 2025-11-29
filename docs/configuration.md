@@ -30,7 +30,10 @@ The `mcp.json` file defines the MCP servers that the client should connect to. I
     },
     "remote-server": {
       "transport": "sse",
-      "url": "http://localhost:3000/sse"
+      "url": "http://localhost:3000/sse",
+      "headers": {
+        "Authorization": "Bearer my-token"
+      }
     }
   }
 }
@@ -40,6 +43,7 @@ The `mcp.json` file defines the MCP servers that the client should connect to. I
 - **command**: The executable to run (for `stdio`).
 - **args**: List of arguments (for `stdio`).
 - **url**: The URL of the SSE endpoint (for `sse`).
+- **headers**: (Optional) Dictionary of headers (e.g., for Auth) (for `sse`).
 - **env**: (Optional) Dictionary of environment variables.
 
 ## Runtime Configuration

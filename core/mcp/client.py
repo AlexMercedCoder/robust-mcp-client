@@ -23,7 +23,7 @@ class MCPClientManager:
                     raise ValueError(f"URL required for SSE server {config.name}")
                     
                 read, write = await self.exit_stack.enter_async_context(
-                    sse_client(config.url)
+                    sse_client(config.url, headers=config.headers)
                 )
             else:
                 # Default to Stdio

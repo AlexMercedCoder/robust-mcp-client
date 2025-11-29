@@ -14,7 +14,7 @@ The Web UI provides a rich chat experience with support for markdown, code highl
 - **Settings**: Click the "Settings" button in the sidebar to:
   - Change the LLM Provider (Local, OpenAI, Gemini, Claude).
   - Enter API Keys.
-  - Manage MCP Servers (Add/Remove Stdio or HTTP servers).
+  - Manage MCP Servers (Add/Remove Stdio or HTTP servers with headers).
 - **History**: Previous conversations are saved in the sidebar. Click to load them.
 - **Dark Mode**: Toggle the sun/moon icon in the header.
 

@@ -25,27 +25,49 @@ state = GlobalState()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup
+    print("Initializing Database...")
+    await MemoryManager().init_db()
+    
+    # Smart LLM Selection (Skip local download if cloud keys exist)
+    if settings.DEFAULT_LLM_PROVIDER == "local":
+        if settings.OPENAI_API_KEY:
+            print("Detected OpenAI Key, switching default to OpenAI")
+            settings.DEFAULT_LLM_PROVIDER = "openai"
+            state.llm = OpenAILLM()
+        elif settings.GEMINI_API_KEY:
+            print("Detected Gemini Key, switching default to Gemini")
+            settings.DEFAULT_LLM_PROVIDER = "gemini"
+            state.llm = GeminiLLM()
+        elif settings.ANTHROPIC_API_KEY:
+            print("Detected Anthropic Key, switching default to Anthropic")
+            settings.DEFAULT_LLM_PROVIDER = "anthropic"
+            state.llm = AnthropicLLM()
+        else:
+            print("No cloud keys detected, using Local LLM")
+            state.llm = LocalLLM()
+    else:
+        # Initialize based on configured provider
+        if settings.DEFAULT_LLM_PROVIDER == "openai":
+            state.llm = OpenAILLM()
+        elif settings.DEFAULT_LLM_PROVIDER == "gemini":
+            state.llm = GeminiLLM()
+        elif settings.DEFAULT_LLM_PROVIDER == "anthropic":
+            state.llm = AnthropicLLM()
+        else:
+            state.llm = LocalLLM()
+
     # Initialize MCP
     state.mcp = MCPClientManager()
     await state.mcp.connect_all()
     
-    # Initialize LLM
-    if settings.DEFAULT_LLM_PROVIDER == "openai":
-        state.llm = OpenAILLM()
-    elif settings.DEFAULT_LLM_PROVIDER == "gemini":
-        state.llm = GeminiLLM()
-    elif settings.DEFAULT_LLM_PROVIDER == "anthropic":
-        state.llm = AnthropicLLM()
-    else:
-        state.llm = LocalLLM()
-        
     yield
     
-    # Cleanup
+    # Shutdown
     if state.mcp:
         await state.mcp.cleanup()
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title="Robust MCP Client", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -109,7 +131,8 @@ async def get_config():
                 "transport": s.transport, 
                 "command": s.command, 
                 "args": s.args, 
-                "url": s.url
+                "url": s.url,
+                "headers": s.headers
             } 
             for s in settings.MCP_SERVERS
         ]
@@ -143,7 +166,8 @@ async def update_config(config: ConfigUpdate):
                 command=s.get("command"),
                 args=s.get("args", []),
                 env=s.get("env", {}),
-                url=s.get("url")
+                url=s.get("url"),
+                headers=s.get("headers", {})
             ))
         settings.MCP_SERVERS = new_servers
         
