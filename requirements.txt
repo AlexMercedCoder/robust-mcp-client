@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+typer
+rich
+pydantic
+pydantic-settings
+httpx
+python-dotenv
+llama-cpp-python
+openai
+google-generativeai
+anthropic
+mcp
+pytest
+pytest-asyncio
+sqlalchemy
+aiosqlite
