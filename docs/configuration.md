@@ -46,6 +46,30 @@ The `mcp.json` file defines the MCP servers that the client should connect to. I
 - **headers**: (Optional) Dictionary of headers (e.g., for Auth) (for `sse`).
 - **env**: (Optional) Dictionary of environment variables.
 
+### MCP Server Headers (OAuth/Auth)
+
+When connecting to remote MCP servers (SSE), you may need to provide authentication headers. This is common for servers protected by OAuth or API keys.
+
+**Example: Bearer Token (OAuth)**
+```json
+{
+  "headers": {
+    "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+  }
+}
+```
+
+**Example: Custom API Key**
+```json
+{
+  "headers": {
+    "X-API-Key": "your-api-key"
+  }
+}
+```
+
+You can configure these in `mcp.json` or via the **Settings** page in the UI. In the UI, enter the headers as a JSON object string (e.g., `{"Authorization": "Bearer ..."}`).
+
 ## Runtime Configuration
 
 You can also update the configuration at runtime via the Web UI **Settings** page. Note that runtime changes to API keys might not persist across server restarts unless you update the `.env` file manually.

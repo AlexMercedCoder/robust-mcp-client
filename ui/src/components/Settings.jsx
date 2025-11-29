@@ -12,6 +12,54 @@ export function Settings({ onBack }) {
   const [status, setStatus] = useState('');
   const [newServer, setNewServer] = useState({ name: '', transport: 'stdio', command: '', args: '', url: '', headers: '{}' });
 
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/config'); // Assuming GET for loading config
+        if (res.ok) {
+          const data = await res.json();
+          setConfig({
+            provider: data.llm_provider || 'local',
+            openai_key: data.openai_key || '',
+            gemini_key: data.gemini_key || '',
+            anthropic_key: data.anthropic_key || '',
+            mcp_servers: data.mcp_servers || []
+          });
+        } else {
+          console.error("Failed to fetch settings:", res.status, res.statusText);
+        }
+      } catch (e) {
+        console.error("Error fetching settings:", e);
+      }
+    };
+    fetchConfig();
+  }, []); // Empty dependency array means this effect runs once after the initial render
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:8000/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          llm_provider: config.provider,
+          openai_key: config.openai_key,
+          gemini_key: config.gemini_key,
+          anthropic_key: config.anthropic_key,
+          mcp_servers: config.mcp_servers
+        })
+      });
+      if (res.ok) {
+        setStatus('Settings saved successfully!');
+        setTimeout(() => setStatus(''), 3000);
+      } else {
+        setStatus('Failed to save settings.');
+      }
+    } catch (e) {
+      setStatus('Error saving settings.');
+    }
+  };
+
   const addServer = () => {
     let parsedHeaders = {};
     try {
