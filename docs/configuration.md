@@ -28,17 +28,19 @@ The `mcp.json` file defines the MCP servers that the client should connect to. I
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/files"]
     },
-    "git": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "-v", "/repo:/repo", "mcp/git"]
+    "remote-server": {
+      "transport": "sse",
+      "url": "http://localhost:3000/sse"
     }
   }
 }
 ```
 
-- **command**: The executable to run (e.g., `npx`, `python`, `docker`).
-- **args**: List of arguments to pass to the command.
-- **env**: (Optional) Dictionary of environment variables for the server process.
+- **transport**: `stdio` (default) or `sse`.
+- **command**: The executable to run (for `stdio`).
+- **args**: List of arguments (for `stdio`).
+- **url**: The URL of the SSE endpoint (for `sse`).
+- **env**: (Optional) Dictionary of environment variables.
 
 ## Runtime Configuration
 

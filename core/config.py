@@ -6,9 +6,11 @@ from pydantic import Field
 
 class MCPServerConfig(BaseSettings):
     name: str
-    command: str
+    transport: str = "stdio" # stdio, sse
+    command: Optional[str] = None
     args: List[str] = []
     env: Dict[str, str] = {}
+    url: Optional[str] = None
 
 class Settings(BaseSettings):
     # LLM Configuration
@@ -41,9 +43,11 @@ class Settings(BaseSettings):
                     for name, config in servers.items():
                         self.MCP_SERVERS.append(MCPServerConfig(
                             name=name,
+                            transport=config.get("transport", "stdio"),
                             command=config.get("command"),
                             args=config.get("args", []),
-                            env=config.get("env", {})
+                            env=config.get("env", {}),
+                            url=config.get("url")
                         ))
             except Exception as e:
                 print(f"Error loading mcp.json: {e}")

@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 
-from core.config import settings
+from core.config import settings, MCPServerConfig
 from core.chat_engine import ChatEngine
 from core.llm.base import BaseLLM
 from core.llm.local import LocalLLM
@@ -59,11 +59,14 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[int] = None
 
+from core.config import settings, MCPServerConfig
+
 class ConfigUpdate(BaseModel):
     llm_provider: Optional[str] = None
     openai_key: Optional[str] = None
     gemini_key: Optional[str] = None
     anthropic_key: Optional[str] = None
+    mcp_servers: Optional[List[Dict[str, Any]]] = None
 
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
@@ -100,7 +103,16 @@ async def get_history(conversation_id: int):
 async def get_config():
     return {
         "provider": settings.DEFAULT_LLM_PROVIDER,
-        "mcp_servers": [s.name for s in settings.MCP_SERVERS]
+        "mcp_servers": [
+            {
+                "name": s.name, 
+                "transport": s.transport, 
+                "command": s.command, 
+                "args": s.args, 
+                "url": s.url
+            } 
+            for s in settings.MCP_SERVERS
+        ]
     }
 
 @app.post("/api/config")
@@ -120,6 +132,26 @@ async def update_config(config: ConfigUpdate):
             state.llm = AnthropicLLM(api_key=config.anthropic_key)
         else:
             state.llm = LocalLLM()
+            
+    if config.mcp_servers is not None:
+        # Update MCP servers
+        new_servers = []
+        for s in config.mcp_servers:
+            new_servers.append(MCPServerConfig(
+                name=s["name"],
+                transport=s.get("transport", "stdio"),
+                command=s.get("command"),
+                args=s.get("args", []),
+                env=s.get("env", {}),
+                url=s.get("url")
+            ))
+        settings.MCP_SERVERS = new_servers
+        
+        # Re-connect MCP
+        if state.mcp:
+            await state.mcp.cleanup()
+        state.mcp = MCPClientManager()
+        await state.mcp.connect_all()
             
     return {"status": "updated"}
 

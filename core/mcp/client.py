@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
 from core.config import settings, MCPServerConfig
 
 class MCPClientManager:
@@ -17,18 +18,27 @@ class MCPClientManager:
 
     async def connect(self, config: MCPServerConfig):
         try:
-            # Currently only supporting Stdio for local servers as per common use case
-            # TODO: Add SSE support for remote servers
-            server_params = StdioServerParameters(
-                command=config.command,
-                args=config.args,
-                env={**os.environ, **config.env}
-            )
-            
-            # We need to maintain the connection context
-            read, write = await self.exit_stack.enter_async_context(
-                stdio_client(server_params)
-            )
+            if config.transport == "sse":
+                if not config.url:
+                    raise ValueError(f"URL required for SSE server {config.name}")
+                    
+                read, write = await self.exit_stack.enter_async_context(
+                    sse_client(config.url)
+                )
+            else:
+                # Default to Stdio
+                if not config.command:
+                    raise ValueError(f"Command required for Stdio server {config.name}")
+                    
+                server_params = StdioServerParameters(
+                    command=config.command,
+                    args=config.args,
+                    env={**os.environ, **config.env}
+                )
+                
+                read, write = await self.exit_stack.enter_async_context(
+                    stdio_client(server_params)
+                )
             
             session = await self.exit_stack.enter_async_context(
                 ClientSession(read, write)
